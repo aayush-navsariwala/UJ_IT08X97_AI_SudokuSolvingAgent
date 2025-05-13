@@ -91,3 +91,25 @@ class WinState(State):
 
     def exit(self):
         print("Exiting Win State")
+        
+class ResetState(State):
+    def __init__(self, board, fsm):
+        self.board = board
+        self.fsm = fsm
+
+    def enter(self):
+        print("Entered Reset State 🔄")
+
+    def execute(self):
+        # Reset board to all zeros
+        self.board.grid = [[0 for _ in range(9)] for _ in range(9)]
+        print("🔁 Sudoku board has been cleared.")
+        self.board.display()
+        
+        # Return to InputState
+        from core.states import InputState
+        self.fsm.set_state(InputState())
+        self.fsm.update()
+
+    def exit(self):
+        print("Exiting Reset State")
