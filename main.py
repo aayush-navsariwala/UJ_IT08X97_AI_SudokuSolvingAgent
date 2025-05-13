@@ -1,49 +1,27 @@
+from gui.sudoku_gui import SudokuGUI
+import tkinter as tk
 from core.board import SudokuBoard
 from core.fsm import FSMManager
-from core.states import InputState, ValidationState, SolvingState, ResetState
+from core.states import InputState, ValidationState, SolvingState, WinState, ResetState
 from solver.backtracking import solve
 
 if __name__ == "__main__":
-    # Sample incomplete Sudoku puzzle (0 implies the field is empty)
-    sample_grid = [
-        [5, 3, 0, 0, 7, 0, 0, 0, 0],
-        [6, 0, 0, 1, 9, 5, 0, 0, 0],
-        [0, 9, 8, 0, 0, 0, 0, 6, 0],
-        [8, 0, 0, 0, 6, 0, 0, 0, 3],
-        [4, 0, 0, 8, 0, 3, 0, 0, 1],
-        [7, 0, 0, 0, 2, 0, 0, 0, 6],
-        [0, 6, 0, 0, 0, 0, 2, 8, 0],
-        [0, 0, 0, 4, 1, 9, 0, 0, 5],
-        [0, 0, 0, 0, 8, 0, 0, 7, 9]
-    ]
-
-    # Initializing the Sudoku board
-    board = SudokuBoard(sample_grid)
-    print("Initial Sudoku Board:")
-    board.display()
+    board = SudokuBoard()
 
     # Initializing the FSM
     fsm = FSMManager()
     
-    # Input
-    fsm.set_state(InputState())
-    fsm.update()
+    # Pre-assign FSM states so the GUI can access them
+    fsm.input_state = InputState()
+    fsm.validation_state = ValidationState(board, fsm)
+    fsm.solving_state = SolvingState(board, fsm)
+    fsm.win_state = WinState(board)
+    fsm.reset_state = ResetState(board, fsm)
     
-    # # Run Backtracking Solver
-    # print("\nSolving Sudoku with Backtracking:")
-    # if solve(board):
-    #     print("Solved Sudoku Board:")
-    #     board.display()
-    # else:
-    #     print("No solution found.")
-    
-    # Validation
-    fsm.set_state(ValidationState(board, fsm))
-    fsm.update()
-    
-    # Solving
-    fsm.set_state(SolvingState(board, fsm, algorithm="backtracking"))
-    fsm.update()
-    
-    fsm.set_state(ResetState(board, fsm))
-    fsm.update()
+    fsm.set_state(fsm.input_state)
+
+    # Launch GUI
+    root = tk.Tk()
+    root.title("Sudoku Solver AI (FSM-Based)")
+    app = SudokuGUI(root, board, fsm)
+    root.mainloop()

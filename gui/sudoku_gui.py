@@ -1,0 +1,59 @@
+import tkinter as tk
+from tkinter import messagebox
+
+class SudokuGUI:
+    def __init__(self, root, board, fsm):
+        self.root = root
+        self.board = board
+        self.fsm = fsm
+        self.entries = []
+
+        self.build_grid()
+        self.build_buttons()
+
+    def build_grid(self):
+        for row in range(9):
+            row_entries = []
+            for col in range(9):
+                entry = tk.Entry(self.root, width=2, font=('Arial', 18), justify='center')
+                entry.grid(row=row, column=col, padx=2, pady=2)
+                row_entries.append(entry)
+            self.entries.append(row_entries)
+
+    def build_buttons(self):
+        button_frame = tk.Frame(self.root)
+        button_frame.grid(row=9, column=0, columnspan=9, pady=10)
+
+        tk.Button(button_frame, text="Validate", command=self.validate).grid(row=0, column=0, padx=5)
+        tk.Button(button_frame, text="Solve", command=self.solve).grid(row=0, column=1, padx=5)
+        tk.Button(button_frame, text="Reset", command=self.reset).grid(row=0, column=2, padx=5)
+
+    def validate(self):
+        self.update_board_from_ui()
+        self.fsm.set_state(self.fsm.validation_state)
+        self.fsm.update()
+
+    def solve(self):
+        self.update_board_from_ui()
+        self.fsm.set_state(self.fsm.solving_state)
+        self.fsm.update()
+        self.update_ui_from_board()
+
+    def reset(self):
+        self.fsm.set_state(self.fsm.reset_state)
+        self.fsm.update()
+        self.update_ui_from_board()
+
+    def update_board_from_ui(self):
+        for row in range(9):
+            for col in range(9):
+                val = self.entries[row][col].get()
+                self.board.grid[row][col] = int(val) if val.isdigit() and 1 <= int(val) <= 9 else 0
+
+    def update_ui_from_board(self):
+        for row in range(9):
+            for col in range(9):
+                val = self.board.grid[row][col]
+                self.entries[row][col].delete(0, tk.END)
+                if val != 0:
+                    self.entries[row][col].insert(0, str(val))
