@@ -11,10 +11,10 @@ if __name__ == "__main__":
     # Initializing the FSM
     fsm = FSMManager()
     
-    # Pre-assign FSM states so the GUI can access them
+    # Define the states and attach them to the FSM
     fsm.input_state = InputState()
     fsm.validation_state = ValidationState(board, fsm)
-    fsm.solving_state = SolvingState(board, fsm)
+    fsm.solving_state_class = SolvingState  
     fsm.win_state = WinState(board)
     fsm.reset_state = ResetState(board, fsm)
     

@@ -27,6 +27,12 @@ class SudokuGUI:
         tk.Button(button_frame, text="Validate", command=self.validate).grid(row=0, column=0, padx=5)
         tk.Button(button_frame, text="Solve", command=self.solve).grid(row=0, column=1, padx=5)
         tk.Button(button_frame, text="Reset", command=self.reset).grid(row=0, column=2, padx=5)
+        
+        tk.Label(button_frame, text="Algorithm:").grid(row=0, column=3, padx=5)
+        self.selected_algorithm = tk.StringVar()
+        self.selected_algorithm.set("backtracking")  # default
+        algo_menu = tk.OptionMenu(button_frame, self.selected_algorithm, "backtracking", "constraint_propagation", "dlx")
+        algo_menu.grid(row=0, column=4, padx=5)
 
     def validate(self):
         self.update_board_from_ui()
@@ -35,7 +41,9 @@ class SudokuGUI:
 
     def solve(self):
         self.update_board_from_ui()
-        self.fsm.set_state(self.fsm.solving_state)
+        chosen_algo = self.selected_algorithm.get()
+        # Recreate solving state with the selected algorithm
+        self.fsm.set_state(self.fsm.solving_state_class(self.board, self.fsm, algorithm=chosen_algo))
         self.fsm.update()
         self.update_ui_from_board()
 
