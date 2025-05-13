@@ -63,8 +63,31 @@ class SolvingState(State):
         if success:
             print("✅ Sudoku puzzle solved successfully!")
             self.board.display()
+            
+            # Automatically goes to WinState
+            from core.states import WinState
+            self.fsm.set_state(WinState(self.board))  
+            self.fsm.update()
+            
         else:
             print("❌ Failed to solve the puzzle.")
 
     def exit(self):
         print("Exiting Solving State.")
+        
+class WinState(State):
+    def __init__(self, board):
+        self.board = board
+
+    def enter(self):
+        print("Entered Win State 🎉")
+
+    def execute(self):
+        if self.board.is_complete():
+            print("🎯 Puzzle is fully and correctly solved!")
+        else:
+            print("⚠ Puzzle appears incomplete or incorrect.")
+        self.board.display()
+
+    def exit(self):
+        print("Exiting Win State")
