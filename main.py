@@ -1,6 +1,6 @@
 from core.board import SudokuBoard
 from core.fsm import FSMManager
-from core.states import InputState, ValidationState
+from core.states import InputState, ValidationState, SolvingState
 from solver.backtracking import solve
 
 if __name__ == "__main__":
@@ -24,8 +24,9 @@ if __name__ == "__main__":
 
     # Initializing the FSM
     fsm = FSMManager()
+    
+    # Input
     fsm.set_state(InputState())
-    print("\nRunning FSM:")
     fsm.update()
     
     # # Run Backtracking Solver
@@ -36,6 +37,10 @@ if __name__ == "__main__":
     # else:
     #     print("No solution found.")
     
-    validation_state = ValidationState(board, fsm)
-    fsm.set_state(validation_state)
+    # Validation
+    fsm.set_state(ValidationState(board, fsm))
+    fsm.update()
+    
+    # Solving
+    fsm.set_state(SolvingState(board, fsm, algorithm="backtracking"))
     fsm.update()
