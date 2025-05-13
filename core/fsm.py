@@ -7,8 +7,15 @@ class FSMManager:
     def __init__(self):
         self.state = None
 
-    def set_state(self, new_state):
+    def set_state(self, state):
         if self.state:
             self.state.exit()
-        self.state = new_state
+        self.state = state
         self.state.enter()
+        
+    def update(self):
+        if self.state:
+            self.state.execute()
+            
+    def get_state(self):
+        return self.state
