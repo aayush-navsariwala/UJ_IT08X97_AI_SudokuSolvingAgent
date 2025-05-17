@@ -2,6 +2,7 @@ from core.fsm import State
 from solver.backtracking import solve
 from solver.constraint_propagation import solve as constraint_solve
 from solver.dlx import solve as dlx_solve
+import time
 
 class InputState(State):
     def enter(self):
@@ -56,6 +57,10 @@ class SolvingState(State):
         print(f"Entered Solving State using {self.algorithm} algorithm...")
 
     def execute(self):
+        print(f"Solving with {self.algorithm}...")
+        
+        start_time = time.time()
+        
         if self.algorithm == "backtracking":
             success = solve(self.board)
         elif self.algorithm == "constraint_propagation":
@@ -65,6 +70,11 @@ class SolvingState(State):
         else:
             print("❌ Algorithm not supported yet.")
             success = False
+
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        print(f"🕒 Execution time: {duration:.5f} seconds")
 
         if success:
             print("✅ Sudoku puzzle solved successfully!")
