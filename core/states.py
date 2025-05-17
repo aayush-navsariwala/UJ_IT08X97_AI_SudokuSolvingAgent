@@ -1,6 +1,7 @@
 from core.fsm import State
 from solver.backtracking import solve
 from solver.constraint_propagation import solve as constraint_solve
+from solver.dlx import solve as dlx_solve
 
 class InputState(State):
     def enter(self):
@@ -59,6 +60,8 @@ class SolvingState(State):
             success = solve(self.board)
         elif self.algorithm == "constraint_propagation":
             success = constraint_solve(self.board)
+        elif self.algorithm == "dlx":
+            success = dlx_solve(self.board)
         else:
             print("❌ Algorithm not supported yet.")
             success = False
