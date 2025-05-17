@@ -24,7 +24,7 @@ class SudokuGUI:
         for row in range(9):
             row_entries = []
             for col in range(9):
-                entry = tk.Entry(self.root, width=2, font=('Arial', 18), justify='center')
+                entry = tk.Entry(self.root, width=2, font=('Arial', 18), justify='center', state='disabled')
                 entry.grid(row=row, column=col, padx=2, pady=2)
                 row_entries.append(entry)
             self.entries.append(row_entries)
@@ -132,10 +132,13 @@ class SudokuGUI:
     def update_ui_from_board(self):
         for row in range(9):
             for col in range(9):
+                entry = self.entries[row][col]
+                entry.config(state='normal')
+                entry.delete(0, tk.END)
                 val = self.board.grid[row][col]
-                self.entries[row][col].delete(0, tk.END)
                 if val != 0:
-                    self.entries[row][col].insert(0, str(val))
+                    entry.insert(0, str(val))
+                entry.config(state='disabled')
                     
     def upload_image(self):
         file_path = filedialog.askopenfilename(
