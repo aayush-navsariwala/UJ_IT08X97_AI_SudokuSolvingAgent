@@ -59,6 +59,16 @@ class SolvingState(State):
     def execute(self):
         print(f"Solving with {self.algorithm}...")
         
+        valid = self.is_valid_board()
+        if valid:
+            print("✅ Puzzle is valid.")
+            if hasattr(self.fsm, 'gui'):
+                self.fsm.gui.status_label.config(text="✅ Puzzle is valid", fg="green")
+        else:
+            print("❌ Puzzle is invalid.")
+            if hasattr(self.fsm, 'gui'):
+                self.fsm.gui.status_label.config(text="❌ Puzzle is invalid", fg="red")
+                
         start_time = time.time()
         
         if self.algorithm == "backtracking":
