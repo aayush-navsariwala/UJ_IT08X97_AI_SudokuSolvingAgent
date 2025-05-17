@@ -4,10 +4,12 @@ from tkinter import filedialog
 from utils.image_parser import image_to_grid
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import time
 from solver.backtracking import solve as backtrack_solve
 from solver.constraint_propagation import solve as constraint_solve
 from solver.dlx import solve as dlx_solve
+import traceback
 
 class SudokuGUI:
     def __init__(self, root, board, fsm):
@@ -91,6 +93,12 @@ class SudokuGUI:
         self.canvas.get_tk_widget().pack()
 
     def compare_algorithms(self):
+        
+        from solver.backtracking import solve as backtrack_solve
+        from solver.constraint_propagation import solve as constraint_solve
+        from solver.dlx import solve as dlx_solve
+        from core.board import SudokuBoard
+        
         algorithms = {
             "Backtracking": backtrack_solve,
             "Constraint Propagation": constraint_solve,
@@ -100,32 +108,45 @@ class SudokuGUI:
         results = {}
         
         for name, algo_func in algorithms.items():
-            test_board = [row.copy() for row in self.original_grid]
-            self.board.grid = [row.copy() for row in test_board]
+            copied_grid = [row.copy() for row in self.original_grid]
+            board_copy = SudokuBoard(grid=copied_grid)
 
             start = time.time()
-            success = algo_func(self.board)
+            success = algo_func(board_copy)
             end = time.time()
 
             results[name] = end - start if success else None
 
-            self.all_results.append(results)
-            self.update_graph_multiple()
+        self.all_results.append(results)
+        self.update_graph_multiple()
 
     def update_graph_multiple(self):
         self.ax.clear()
         self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
         self.ax.set_xlabel("Algorithm")
         self.ax.set_ylabel("Time (s)")
+        self.ax.set_ylim(0, None)
+        
+        recent_results = self.all_results[-5:]
+        base_index = max(0, len(self.all_results) - 5)
+        
+        color_cycle = plt.cm.get_cmap('tab10').colors
 
-        for i, result in enumerate(self.all_results):
+        for i, result in enumerate(recent_results):
             names = list(result.keys())
             times = [result[name] if result[name] is not None else 0 for name in names]
-            self.ax.plot(names, times, marker='o', label=f"Puzzle {i+1}")
+            puzzle_num = base_index + i + 1
+            self.ax.plot(
+                names,
+                times,
+                marker='o',
+                linestyle='-',
+                color=color_cycle[i % len(color_cycle)],
+                label=f"Puzzle {puzzle_num}"
+            )
 
-        self.ax.legend()
+        self.ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0))
         self.canvas.draw()
-
         
     def update_graph(self, results):
         self.ax.clear()
@@ -257,4 +278,6 @@ class SudokuGUI:
                 messagebox.showerror("Validation Error", "❌ The uploaded Sudoku puzzle is invalid.")
         except Exception as e:
             self.status_label.config(text="❌ Failed to load puzzle", fg="red")
-            messagebox.showerror("Error", f"Could not read Sudoku image.\n\n{str(e)}")
+            full_error = traceback.format_exc()
+            print(full_error)  
+            messagebox.showerror("Error", f"Could not read Sudoku image.\n\nReason: {str(e)}")

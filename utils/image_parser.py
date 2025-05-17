@@ -43,17 +43,24 @@ def order_points(pts):
     ], dtype="float32")
 
 def extract_digits(warped):
-    cell_size = warped.shape[0] // 9
-    grid = []
-    for y in range(9):
-        row = []
-        for x in range(9):
-            x1, y1 = x * cell_size, y * cell_size
-            cell = warped[y1:y1 + cell_size, x1:x1 + cell_size]
-            digit = recognize_digit(cell)
-            row.append(digit)
-        grid.append(row)
-    return grid
+    try:
+        cell_size = warped.shape[0] // 9
+        grid = []
+        for y in range(9):
+            row = []
+            for x in range(9):
+                x1, y1 = x * cell_size, y * cell_size
+                cell = warped[y1:y1 + cell_size, x1:x1 + cell_size]
+                digit = recognize_digit(cell)
+                row.append(digit)
+            if len(row) != 9:
+                raise ValueError(f"Incomplete row at index {y}")
+            grid.append(row)
+        if len(grid) != 9:
+            raise ValueError("Extracted grid is not 9x9")
+        return grid
+    except Exception as e:
+        raise ValueError(f"Grid extraction failed: {e}")
 
 def recognize_digit(cell):
     h, w = cell.shape
@@ -69,3 +76,5 @@ def image_to_grid(image_path):
     contour = find_largest_contour(thresh)
     warped = warp_perspective(img, contour)
     return extract_digits(warped)
+    cv2.imwrite("debug_warped_output.png", warped)
+    print("Warped image size:", warped.shape)
