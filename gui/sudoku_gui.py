@@ -8,6 +8,7 @@ class SudokuGUI:
         self.root = root
         self.board = board
         self.fsm = fsm
+        self.original_grid = None  
         self.entries = []
 
         self.build_grid()
@@ -66,9 +67,24 @@ class SudokuGUI:
         self.update_ui_from_board()
 
     def reset(self):
-        self.fsm.set_state(self.fsm.reset_state)
-        self.fsm.update()
-        self.update_ui_from_board()
+        if self.original_grid is None:
+            messagebox.showwarning("Reset", "No puzzle has been uploaded yet.")
+            return
+
+        response = messagebox.askquestion(
+            "Reset Puzzle",
+            "What would you like to do?\n\n"
+            "Yes = Replace the puzzle (upload new image)\n"
+            "No = Clear the board to its original uploaded state",
+            icon='question'
+        )
+
+        if response == 'yes':
+            self.upload_image()
+        else:
+            self.board.grid = [row.copy() for row in self.original_grid]
+            self.update_ui_from_board()
+            self.status_label.config(text="🔄 Board reset to original values", fg="blue")
 
     def update_board_from_ui(self):
         for row in range(9):
@@ -95,8 +111,11 @@ class SudokuGUI:
         try:
             grid = image_to_grid(file_path)
             self.board.grid = grid
+            self.original_grid = [row.copy() for row in grid]  
+            self.board.grid = [row.copy() for row in grid]     
             self.update_ui_from_board()
             self.status_label.config(text="🟢 Puzzle loaded successfully", fg="green")
+
             print("✅ Image loaded and board populated successfully.")
         except Exception as e:
             messagebox.showerror("Error", f"Could not read Sudoku image.\n\n{str(e)}")
