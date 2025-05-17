@@ -118,6 +118,10 @@ class SudokuGUI:
         )
         if not file_path:
             return
+        
+        # Show loading status immediately
+        self.status_label.config(text="⏳ Loading puzzle, please wait...", fg="orange")
+        self.root.update_idletasks()  # ⬅ Force GUI to redraw immediately
 
         try:
             grid = image_to_grid(file_path)
