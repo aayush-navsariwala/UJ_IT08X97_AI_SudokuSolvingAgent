@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
+from utils.image_parser import image_to_grid
 
 class SudokuGUI:
     def __init__(self, root, board, fsm):
@@ -27,6 +29,7 @@ class SudokuGUI:
         tk.Button(button_frame, text="Validate", command=self.validate).grid(row=0, column=0, padx=5)
         tk.Button(button_frame, text="Solve", command=self.solve).grid(row=0, column=1, padx=5)
         tk.Button(button_frame, text="Reset", command=self.reset).grid(row=0, column=2, padx=5)
+        tk.Button(button_frame, text="Upload Image", command=self.upload_image).grid(row=0, column=5, padx=5)
         
         tk.Label(button_frame, text="Algorithm:").grid(row=0, column=3, padx=5)
         self.selected_algorithm = tk.StringVar()
@@ -65,3 +68,19 @@ class SudokuGUI:
                 self.entries[row][col].delete(0, tk.END)
                 if val != 0:
                     self.entries[row][col].insert(0, str(val))
+                    
+    def upload_image(self):
+        file_path = filedialog.askopenfilename(
+            title="Select Sudoku Image",
+            filetypes=[("Image files", "*.jpg *.png *.jpeg *.bmp")]
+        )
+        if not file_path:
+            return
+
+        try:
+            grid = image_to_grid(file_path)
+            self.board.grid = grid
+            self.update_ui_from_board()
+            print("✅ Image loaded and board populated successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not read Sudoku image.\n\n{str(e)}")
