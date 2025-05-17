@@ -3,6 +3,7 @@ from solver.backtracking import solve
 from solver.constraint_propagation import solve as constraint_solve
 from solver.dlx import solve as dlx_solve
 import time
+import tkinter as tk
 
 class InputState(State):
     def enter(self):
@@ -24,12 +25,15 @@ class ValidationState(State):
         print("Entered Validation State")
 
     def execute(self):
-        if self.is_valid_board():
-            print("✅ Puzzle is valid.")
-            # Later: Transition to solving state
-        else:
-            print("❌ Puzzle is invalid. Please check your input.")
-            # Later: Transition back to InputState
+        valid = self.is_valid_board()
+        if hasattr(self.fsm, 'gui'):
+            gui = self.fsm.gui
+            if valid:
+                gui.status_label.config(text="✅ Puzzle is valid", fg="green")
+                gui.solve_button.config(state=tk.NORMAL)
+            else:
+                gui.status_label.config(text="❌ Puzzle is invalid", fg="red")
+                gui.solve_button.config(state=tk.DISABLED)
 
     def exit(self):
         print("Exiting Validation State")
@@ -58,43 +62,32 @@ class SolvingState(State):
 
     def execute(self):
         print(f"Solving with {self.algorithm}...")
-        
-        valid = self.is_valid_board()
-        if valid:
-            print("✅ Puzzle is valid.")
-            if hasattr(self.fsm, 'gui'):
-                self.fsm.gui.status_label.config(text="✅ Puzzle is valid", fg="green")
-        else:
-            print("❌ Puzzle is invalid.")
-            if hasattr(self.fsm, 'gui'):
-                self.fsm.gui.status_label.config(text="❌ Puzzle is invalid", fg="red")
                 
         start_time = time.time()
         
         if self.algorithm == "backtracking":
-            success = solve(self.board)
+            from solver.backtracking import solve as backtrack_solve
+            success = backtrack_solve(self.board)
         elif self.algorithm == "constraint_propagation":
+            from solver.constraint_propagation import solve as constraint_solve
             success = constraint_solve(self.board)
         elif self.algorithm == "dlx":
+            from solver.dlx import solve as dlx_solve
             success = dlx_solve(self.board)
         else:
-            print("❌ Algorithm not supported yet.")
+            print("❌ Algorithm not supported.")
             success = False
-
-        end_time = time.time()
-        duration = end_time - start_time
+            
+        duration = time.time() - start_time
+        print(f"🕒 Execution time: {duration:.5f} seconds")
         
-        duration_msg = f"🕒 Execution time: {duration:.5f} seconds"
-        print(duration_msg)
         if hasattr(self.fsm, 'gui'):
-            self.fsm.gui.timer_label.config(text=duration_msg)
-
+            self.fsm.gui.timer_label.config(text=f"🕒 Execution time: {duration:.5f} seconds")
 
         if success:
             print("✅ Sudoku puzzle solved successfully!")
             self.board.display()
             
-            # Automatically goes to WinState
             from core.states import WinState
             self.fsm.set_state(WinState(self.board))  
             self.fsm.update()

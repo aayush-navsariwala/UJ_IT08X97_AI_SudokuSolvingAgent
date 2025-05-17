@@ -25,6 +25,7 @@ class SudokuGUI:
             self.entries.append(row_entries)
 
     def build_buttons(self):
+        self.solve_button = None  
         button_frame = tk.Frame(self.root)
         button_frame.grid(row=9, column=0, columnspan=9, pady=10)
 
@@ -36,8 +37,11 @@ class SudokuGUI:
         tk.Label(button_frame, text="Algorithm:").grid(row=0, column=3, padx=5)
         self.selected_algorithm = tk.StringVar()
         self.selected_algorithm.set("backtracking")  # default
+        self.solve_button = tk.Button(button_frame, text="Solve", command=self.solve)
+        self.solve_button.grid(row=0, column=1, padx=5)
         algo_menu = tk.OptionMenu(button_frame, self.selected_algorithm, "backtracking", "constraint_propagation", "dlx")
         algo_menu.grid(row=0, column=4, padx=5)
+
         
     def build_status_bar(self):
         self.status_frame = tk.Frame(self.root)
@@ -56,7 +60,13 @@ class SudokuGUI:
         self.update_board_from_ui()
         self.fsm.set_state(self.fsm.validation_state)
         self.fsm.update()
-
+        
+        # GUI-controlled feedback
+        if self.status_label["text"].startswith("✅"):
+            messagebox.showinfo("Validation", "✅ The Sudoku puzzle is valid!")
+        elif self.status_label["text"].startswith("❌"):
+            messagebox.showerror("Validation", "❌ The Sudoku puzzle is invalid.")
+        
     def solve(self):
         self.update_board_from_ui()
         chosen_algo = self.selected_algorithm.get()
@@ -84,6 +94,7 @@ class SudokuGUI:
         else:
             self.board.grid = [row.copy() for row in self.original_grid]
             self.update_ui_from_board()
+            self.solve_button.config(state=tk.NORMAL)
             self.status_label.config(text="🔄 Board reset to original values", fg="blue")
 
     def update_board_from_ui(self):
@@ -114,6 +125,7 @@ class SudokuGUI:
             self.original_grid = [row.copy() for row in grid]  
             self.board.grid = [row.copy() for row in grid]     
             self.update_ui_from_board()
+            self.solve_button.config(state=tk.NORMAL)
             self.status_label.config(text="🟢 Puzzle loaded successfully", fg="green")
 
             print("✅ Image loaded and board populated successfully.")
