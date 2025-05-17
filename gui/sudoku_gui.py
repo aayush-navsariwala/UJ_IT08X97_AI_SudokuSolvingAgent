@@ -259,25 +259,49 @@ class SudokuGUI:
             self.board.grid = [row.copy() for row in grid]
             self.update_ui_from_board()
             
-            # Always enable Reset and Validate
-            self.reset_button.config(state=tk.NORMAL)
-            self.validate_button.config(state=tk.NORMAL)
+            self.root.after(100, self.validate_uploaded_board)
 
-            # Enable algorithm dropdown
+            # # 🔍 Auto-validate after upload
+            # if self.is_board_valid():
+            #     self.status_label.config(text="✅ Puzzle loaded and valid", fg="green")
+            #     self.solve_button.config(state=tk.NORMAL)
+            # else:
+            #     self.status_label.config(text="❌ Puzzle loaded but invalid", fg="red")
+            #     self.solve_button.config(state=tk.DISABLED)
+            #     self.root.after(100, lambda: messagebox.showerror("Validation Error", "❌ The uploaded Sudoku puzzle is invalid."))
+                
+            # Always enable Reset and Validate
+            # self.reset_button.config(state=tk.NORMAL)
+            # self.validate_button.config(state=tk.NORMAL)
+            # self.algo_menu.config(state=tk.NORMAL)
+            
+            # self.compare_algorithms()
+                
+        except Exception as e:
+            self.status_label.config(text="❌ Failed to load puzzle", fg="red")
+            self.disable_controls()
+            self.root.after(100, lambda: messagebox.showerror("Error", f"Could not read Sudoku image.\n\nReason: {str(e)}"))
+            
+    def validate_uploaded_board(self):
+        if self.is_board_valid():
+            self.status_label.config(text="✅ Puzzle loaded and valid", fg="green")
+            self.solve_button.config(state=tk.NORMAL)
+            
+            self.validate_button.config(state=tk.NORMAL)
+            self.reset_button.config(state=tk.NORMAL)
             self.algo_menu.config(state=tk.NORMAL)
             
             self.compare_algorithms()
+        else:
+            self.status_label.config(text="❌ Puzzle loaded but invalid", fg="red")
+            self.solve_button.config(state=tk.DISABLED)
+            self.validate_button.config(state=tk.NORMAL)
+            self.reset_button.config(state=tk.NORMAL)
+            self.algo_menu.config(state=tk.NORMAL)
 
-            # 🔍 Auto-validate after upload
-            if self.is_board_valid():
-                self.status_label.config(text="✅ Puzzle loaded and valid", fg="green")
-                self.solve_button.config(state=tk.NORMAL)
-            else:
-                self.status_label.config(text="❌ Puzzle loaded but invalid", fg="red")
-                self.solve_button.config(state=tk.DISABLED)
-                messagebox.showerror("Validation Error", "❌ The uploaded Sudoku puzzle is invalid.")
-        except Exception as e:
-            self.status_label.config(text="❌ Failed to load puzzle", fg="red")
-            full_error = traceback.format_exc()
-            print(full_error)  
-            messagebox.showerror("Error", f"Could not read Sudoku image.\n\nReason: {str(e)}")
+            self.root.after(100, lambda: messagebox.showerror(
+                "Validation Error", "❌ The uploaded Sudoku puzzle is invalid."))
+
+
+
+
