@@ -16,6 +16,7 @@ class SudokuGUI:
         self.fsm = fsm
         self.original_grid = None  
         self.entries = []
+        self.all_results = [] 
 
         self.build_grid()
         self.build_buttons()
@@ -51,6 +52,7 @@ class SudokuGUI:
         self.reset_button.grid(row=0, column=2, padx=5)
 
         tk.Button(button_frame, text="Upload Image", command=self.upload_image).grid(row=0, column=5, padx=5)
+        tk.Button(button_frame, text="Clear Graph", command=self.clear_graph).grid(row=0, column=6, padx=5)
         
         tk.Label(button_frame, text="Algorithm:").grid(row=0, column=3, padx=5)
         self.selected_algorithm = tk.StringVar()
@@ -107,7 +109,23 @@ class SudokuGUI:
 
             results[name] = end - start if success else None
 
-        self.update_graph(results)
+            self.all_results.append(results)
+            self.update_graph_multiple()
+
+    def update_graph_multiple(self):
+        self.ax.clear()
+        self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
+        self.ax.set_xlabel("Algorithm")
+        self.ax.set_ylabel("Time (s)")
+
+        for i, result in enumerate(self.all_results):
+            names = list(result.keys())
+            times = [result[name] if result[name] is not None else 0 for name in names]
+            self.ax.plot(names, times, marker='o', label=f"Puzzle {i+1}")
+
+        self.ax.legend()
+        self.canvas.draw()
+
         
     def update_graph(self, results):
         self.ax.clear()
@@ -120,6 +138,15 @@ class SudokuGUI:
 
         self.ax.plot(names, times, marker='o')
         self.canvas.draw()
+        
+    def clear_graph(self):
+        self.all_results.clear()
+        self.ax.clear()
+        self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
+        self.ax.set_xlabel("Algorithm")
+        self.ax.set_ylabel("Time (s)")
+        self.canvas.draw()
+
 
     def validate(self):
         self.update_board_from_ui()
