@@ -12,6 +12,7 @@ class SudokuGUI:
 
         self.build_grid()
         self.build_buttons()
+        self.build_status_bar()
 
     def build_grid(self):
         for row in range(9):
@@ -36,6 +37,19 @@ class SudokuGUI:
         self.selected_algorithm.set("backtracking")  # default
         algo_menu = tk.OptionMenu(button_frame, self.selected_algorithm, "backtracking", "constraint_propagation", "dlx")
         algo_menu.grid(row=0, column=4, padx=5)
+        
+    def build_status_bar(self):
+        self.status_frame = tk.Frame(self.root)
+        self.status_frame.grid(row=10, column=0, columnspan=9, pady=(5, 10))
+
+        self.status_label = tk.Label(self.status_frame, text="🟡 No puzzle loaded", fg="orange", font=("Arial", 10))
+        self.status_label.pack()
+
+        self.algorithm_label = tk.Label(self.status_frame, text="Algorithm: None", font=("Arial", 10))
+        self.algorithm_label.pack()
+
+        self.timer_label = tk.Label(self.status_frame, text="", font=("Arial", 10))
+        self.timer_label.pack()
 
     def validate(self):
         self.update_board_from_ui()
@@ -46,6 +60,7 @@ class SudokuGUI:
         self.update_board_from_ui()
         chosen_algo = self.selected_algorithm.get()
         # Recreate solving state with the selected algorithm
+        self.algorithm_label.config(text=f"Algorithm: {chosen_algo}")
         self.fsm.set_state(self.fsm.solving_state_class(self.board, self.fsm, algorithm=chosen_algo))
         self.fsm.update()
         self.update_ui_from_board()
@@ -81,6 +96,7 @@ class SudokuGUI:
             grid = image_to_grid(file_path)
             self.board.grid = grid
             self.update_ui_from_board()
+            self.status_label.config(text="🟢 Puzzle loaded successfully", fg="green")
             print("✅ Image loaded and board populated successfully.")
         except Exception as e:
             messagebox.showerror("Error", f"Could not read Sudoku image.\n\n{str(e)}")

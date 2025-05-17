@@ -74,7 +74,11 @@ class SolvingState(State):
         end_time = time.time()
         duration = end_time - start_time
         
-        print(f"🕒 Execution time: {duration:.5f} seconds")
+        duration_msg = f"🕒 Execution time: {duration:.5f} seconds"
+        print(duration_msg)
+        if hasattr(self.fsm, 'gui'):
+            self.fsm.gui.timer_label.config(text=duration_msg)
+
 
         if success:
             print("✅ Sudoku puzzle solved successfully!")

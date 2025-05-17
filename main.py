@@ -24,4 +24,5 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("Sudoku Solver AI (FSM-Based)")
     app = SudokuGUI(root, board, fsm)
+    fsm.gui = app
     root.mainloop()
