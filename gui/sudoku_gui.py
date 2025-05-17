@@ -2,6 +2,12 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 from utils.image_parser import image_to_grid
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import time
+from solver.backtracking import solve as backtrack_solve
+from solver.constraint_propagation import solve as constraint_solve
+from solver.dlx import solve as dlx_solve
 
 class SudokuGUI:
     def __init__(self, root, board, fsm):
@@ -14,6 +20,7 @@ class SudokuGUI:
         self.build_grid()
         self.build_buttons()
         self.build_status_bar()
+        self.build_graph_section()
         
         self.validate_button.config(state=tk.DISABLED)
         self.solve_button.config(state=tk.DISABLED)
@@ -67,6 +74,52 @@ class SudokuGUI:
 
         self.timer_label = tk.Label(self.status_frame, text="", font=("Arial", 10))
         self.timer_label.pack()
+
+    def build_graph_section(self):
+        self.graph_frame = tk.Frame(self.root)
+        self.graph_frame.grid(row=11, column=0, columnspan=9, pady=10)
+
+        self.figure = Figure(figsize=(5, 3), dpi=100)
+        self.ax = self.figure.add_subplot(111)
+        self.ax.set_title("Algorithm Comparison")
+        self.ax.set_xlabel("Algorithm")
+        self.ax.set_ylabel("Time (s)")
+
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph_frame)
+        self.canvas.get_tk_widget().pack()
+
+    def compare_algorithms(self):
+        algorithms = {
+            "Backtracking": backtrack_solve,
+            "Constraint Propagation": constraint_solve,
+            "DLX": dlx_solve
+        }
+        
+        results = {}
+        
+        for name, algo_func in algorithms.items():
+            test_board = [row.copy() for row in self.original_grid]
+            self.board.grid = [row.copy() for row in test_board]
+
+            start = time.time()
+            success = algo_func(self.board)
+            end = time.time()
+
+            results[name] = end - start if success else None
+
+        self.update_graph(results)
+        
+    def update_graph(self, results):
+        self.ax.clear()
+        self.ax.set_title("Algorithm Comparison")
+        self.ax.set_xlabel("Algorithm")
+        self.ax.set_ylabel("Time (s)")
+
+        names = list(results.keys())
+        times = [results[name] if results[name] is not None else 0 for name in names]
+
+        self.ax.plot(names, times, marker='o')
+        self.canvas.draw()
 
     def validate(self):
         self.update_board_from_ui()
@@ -164,6 +217,8 @@ class SudokuGUI:
 
             # Enable algorithm dropdown
             self.algo_menu.config(state=tk.NORMAL)
+            
+            self.compare_algorithms()
 
             # 🔍 Auto-validate after upload
             if self.is_board_valid():
