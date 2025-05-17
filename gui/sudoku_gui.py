@@ -14,6 +14,11 @@ class SudokuGUI:
         self.build_grid()
         self.build_buttons()
         self.build_status_bar()
+        
+        self.validate_button.config(state=tk.DISABLED)
+        self.solve_button.config(state=tk.DISABLED)
+        self.reset_button.config(state=tk.DISABLED)
+
 
     def build_grid(self):
         for row in range(9):
@@ -29,9 +34,15 @@ class SudokuGUI:
         button_frame = tk.Frame(self.root)
         button_frame.grid(row=9, column=0, columnspan=9, pady=10)
 
-        tk.Button(button_frame, text="Validate", command=self.validate).grid(row=0, column=0, padx=5)
-        tk.Button(button_frame, text="Solve", command=self.solve).grid(row=0, column=1, padx=5)
-        tk.Button(button_frame, text="Reset", command=self.reset).grid(row=0, column=2, padx=5)
+        self.validate_button = tk.Button(button_frame, text="Validate", command=self.validate)
+        self.validate_button.grid(row=0, column=0, padx=5)
+
+        self.solve_button = tk.Button(button_frame, text="Solve", command=self.solve)
+        self.solve_button.grid(row=0, column=1, padx=5)
+
+        self.reset_button = tk.Button(button_frame, text="Reset", command=self.reset)
+        self.reset_button.grid(row=0, column=2, padx=5)
+
         tk.Button(button_frame, text="Upload Image", command=self.upload_image).grid(row=0, column=5, padx=5)
         
         tk.Label(button_frame, text="Algorithm:").grid(row=0, column=3, padx=5)
@@ -39,8 +50,9 @@ class SudokuGUI:
         self.selected_algorithm.set("backtracking")  # default
         self.solve_button = tk.Button(button_frame, text="Solve", command=self.solve)
         self.solve_button.grid(row=0, column=1, padx=5)
-        algo_menu = tk.OptionMenu(button_frame, self.selected_algorithm, "backtracking", "constraint_propagation", "dlx")
-        algo_menu.grid(row=0, column=4, padx=5)
+        self.algo_menu = tk.OptionMenu(button_frame, self.selected_algorithm, "backtracking", "constraint_propagation", "dlx")
+        self.algo_menu.grid(row=0, column=4, padx=5)
+        self.algo_menu.config(state=tk.DISABLED)
 
         
     def build_status_bar(self):
@@ -66,6 +78,20 @@ class SudokuGUI:
             messagebox.showinfo("Validation", "✅ The Sudoku puzzle is valid!")
         elif self.status_label["text"].startswith("❌"):
             messagebox.showerror("Validation", "❌ The Sudoku puzzle is invalid.")
+            
+    def is_board_valid(self):
+        # Reuse same logic from ValidationState
+        for row in range(9):
+            for col in range(9):
+                num = self.board.grid[row][col]
+                if num != 0:
+                    self.board.grid[row][col] = 0
+                    if not self.board.is_valid(row, col, num):
+                        self.board.grid[row][col] = num
+                        return False
+                    self.board.grid[row][col] = num
+        return True
+
         
     def solve(self):
         self.update_board_from_ui()
@@ -121,17 +147,29 @@ class SudokuGUI:
         
         # Show loading status immediately
         self.status_label.config(text="⏳ Loading puzzle, please wait...", fg="orange")
-        self.root.update_idletasks()  # ⬅ Force GUI to redraw immediately
+        self.root.update_idletasks()  
 
         try:
             grid = image_to_grid(file_path)
-            self.board.grid = grid
-            self.original_grid = [row.copy() for row in grid]  
-            self.board.grid = [row.copy() for row in grid]     
+            self.original_grid = [row.copy() for row in grid]
+            self.board.grid = [row.copy() for row in grid]
             self.update_ui_from_board()
-            self.solve_button.config(state=tk.NORMAL)
-            self.status_label.config(text="🟢 Puzzle loaded successfully", fg="green")
+            
+            # Always enable Reset and Validate
+            self.reset_button.config(state=tk.NORMAL)
+            self.validate_button.config(state=tk.NORMAL)
 
-            print("✅ Image loaded and board populated successfully.")
+            # Enable algorithm dropdown
+            self.algo_menu.config(state=tk.NORMAL)
+
+            # 🔍 Auto-validate after upload
+            if self.is_board_valid():
+                self.status_label.config(text="✅ Puzzle loaded and valid", fg="green")
+                self.solve_button.config(state=tk.NORMAL)
+            else:
+                self.status_label.config(text="❌ Puzzle loaded but invalid", fg="red")
+                self.solve_button.config(state=tk.DISABLED)
+                messagebox.showerror("Validation Error", "❌ The uploaded Sudoku puzzle is invalid.")
         except Exception as e:
+            self.status_label.config(text="❌ Failed to load puzzle", fg="red")
             messagebox.showerror("Error", f"Could not read Sudoku image.\n\n{str(e)}")
