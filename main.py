@@ -23,6 +23,7 @@ if __name__ == "__main__":
     # Launch GUI
     root = tk.Tk()
     root.title("Sudoku Solver AI (FSM-Based)")
+    root.state('zoomed')  
     app = SudokuGUI(root, board, fsm)
     fsm.gui = app
     root.mainloop()

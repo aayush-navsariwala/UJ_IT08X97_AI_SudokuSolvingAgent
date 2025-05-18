@@ -20,6 +20,15 @@ class SudokuGUI:
         self.entries = []
         self.all_results = [] 
 
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.left_frame = tk.Frame(self.main_frame)
+        self.left_frame.pack(side=tk.LEFT, padx=20, pady=20)
+
+        self.right_frame = tk.Frame(self.main_frame, width=600)
+        self.right_frame.pack(side=tk.RIGHT, padx=20, pady=20)
+
         self.build_grid()
         self.build_buttons()
         self.build_status_bar()
@@ -34,7 +43,7 @@ class SudokuGUI:
         for row in range(9):
             row_entries = []
             for col in range(9):
-                entry = tk.Entry(self.root, width=2, font=('Arial', 18), justify='center', state='disabled')
+                entry = tk.Entry(self.left_frame, width=2, font=('Arial', 18), justify='center', state='disabled')
                 entry.grid(row=row, column=col, padx=2, pady=2)
                 row_entries.append(entry)
             self.entries.append(row_entries)
@@ -42,7 +51,7 @@ class SudokuGUI:
     def build_buttons(self):
         self.solve_button = None  
         button_frame = tk.Frame(self.root)
-        button_frame.grid(row=9, column=0, columnspan=9, pady=10)
+        button_frame.pack(pady=10)
 
         self.validate_button = tk.Button(button_frame, text="Validate", command=self.validate)
         self.validate_button.grid(row=0, column=0, padx=5)
@@ -68,7 +77,7 @@ class SudokuGUI:
         
     def build_status_bar(self):
         self.status_frame = tk.Frame(self.root)
-        self.status_frame.grid(row=10, column=0, columnspan=9, pady=(5, 10))
+        self.status_frame.pack(pady=5)
 
         self.status_label = tk.Label(self.status_frame, text="🟡 No puzzle loaded", fg="orange", font=("Arial", 10))
         self.status_label.pack()
@@ -80,14 +89,14 @@ class SudokuGUI:
         self.timer_label.pack()
 
     def build_graph_section(self):
-        self.graph_frame = tk.Frame(self.root)
+        self.graph_frame = tk.Frame(self.right_frame)
         self.graph_frame.grid(row=11, column=0, columnspan=9, pady=10)
 
-        self.figure = Figure(figsize=(5, 3), dpi=100)
+        self.figure = Figure(figsize=(7, 5), dpi=100)
         self.ax = self.figure.add_subplot(111)
         self.ax.set_title("Algorithm Comparison")
         self.ax.set_xlabel("Algorithm")
-        self.ax.set_ylabel("Time (s)")
+        self.ax.set_ylabel("Time (ms)")
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph_frame)
         self.canvas.get_tk_widget().pack()
@@ -119,31 +128,42 @@ class SudokuGUI:
 
         self.all_results.append(results)
         self.update_graph_multiple()
+        print("Raw timings (s):", results)
+        print("Converted timings (ms):", [round((results[k] or 0) * 1000, 3) for k in results])
+
 
     def update_graph_multiple(self):
         self.ax.clear()
         self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
         self.ax.set_xlabel("Algorithm")
-        self.ax.set_ylabel("Time (s)")
-        self.ax.set_ylim(0, None)
+        self.ax.set_ylabel("Time (ms)")
         
         recent_results = self.all_results[-5:]
         base_index = max(0, len(self.all_results) - 5)
         
         color_cycle = plt.cm.get_cmap('tab10').colors
+        
+        algo_names = ["Backtracking", "Constraint Propagation", "DLX"]
 
         for i, result in enumerate(recent_results):
-            names = list(result.keys())
-            times = [result[name] if result[name] is not None else 0 for name in names]
+            times = [round((result.get(name) or 0) * 1000, 3) for name in algo_names]
             puzzle_num = base_index + i + 1
             self.ax.plot(
-                names,
+                algo_names,
                 times,
                 marker='o',
                 linestyle='-',
                 color=color_cycle[i % len(color_cycle)],
                 label=f"Puzzle {puzzle_num}"
             )
+            
+        # Dynamic Y-axis scaling based on all plotted values
+        all_times = []
+        for result in recent_results:
+            all_times.extend([(result.get(name) or 0) * 1000 for name in algo_names])
+
+        max_time = max(all_times) if all_times else 1
+        self.ax.set_ylim(0, max_time * 1.2)
 
         self.ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0))
         self.canvas.draw()
@@ -152,10 +172,10 @@ class SudokuGUI:
         self.ax.clear()
         self.ax.set_title("Algorithm Comparison")
         self.ax.set_xlabel("Algorithm")
-        self.ax.set_ylabel("Time (s)")
+        self.ax.set_ylabel("Time (ms)")
 
         names = list(results.keys())
-        times = [results[name] if results[name] is not None else 0 for name in names]
+        times = [round((results[name] or 0) * 1000, 3) for name in names]  
 
         self.ax.plot(names, times, marker='o')
         self.canvas.draw()
@@ -165,7 +185,7 @@ class SudokuGUI:
         self.ax.clear()
         self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
         self.ax.set_xlabel("Algorithm")
-        self.ax.set_ylabel("Time (s)")
+        self.ax.set_ylabel("Time (ms)")
         self.canvas.draw()
 
 
@@ -260,22 +280,6 @@ class SudokuGUI:
             self.update_ui_from_board()
             
             self.root.after(100, self.validate_uploaded_board)
-
-            # # 🔍 Auto-validate after upload
-            # if self.is_board_valid():
-            #     self.status_label.config(text="✅ Puzzle loaded and valid", fg="green")
-            #     self.solve_button.config(state=tk.NORMAL)
-            # else:
-            #     self.status_label.config(text="❌ Puzzle loaded but invalid", fg="red")
-            #     self.solve_button.config(state=tk.DISABLED)
-            #     self.root.after(100, lambda: messagebox.showerror("Validation Error", "❌ The uploaded Sudoku puzzle is invalid."))
-                
-            # Always enable Reset and Validate
-            # self.reset_button.config(state=tk.NORMAL)
-            # self.validate_button.config(state=tk.NORMAL)
-            # self.algo_menu.config(state=tk.NORMAL)
-            
-            # self.compare_algorithms()
                 
         except Exception as e:
             self.status_label.config(text="❌ Failed to load puzzle", fg="red")
