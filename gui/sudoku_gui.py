@@ -16,10 +16,9 @@ import mplcursors
 class SudokuGUI:
     def __init__(self, root, board, fsm):
         self.root = root
-        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=0)
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
-
 
         self.board = board
         self.fsm = fsm
@@ -27,21 +26,21 @@ class SudokuGUI:
         self.entries = []
         self.all_results = [] 
         self.current_annotation = None
-        self.build_results_table()
 
         self.main_frame = tk.Frame(self.root)
         self.main_frame.grid(row=0, column=0, sticky="nsew")
 
-        self.left_frame = tk.Frame(self.main_frame)
-        self.left_frame.grid(row=0, column=0, padx=20, pady=20, sticky="n")
+        self.left_frame = tk.Frame(self.root)
+        self.left_frame.grid(row=0, column=0, sticky="n", padx=10, pady=10)
 
-        self.right_frame = tk.Frame(self.main_frame, width=600)
-        self.right_frame.grid(row=0, column=1, padx=20, pady=20, sticky="n")
+        self.right_frame = tk.Frame(self.root)
+        self.right_frame.grid(row=0, column=1, sticky="n", padx=10, pady=10)
 
         self.build_grid()
         self.build_buttons()
         self.build_status_bar()
         self.build_graph_section()
+        self.build_results_table()
         
         self.validate_button.config(state=tk.DISABLED)
         self.solve_button.config(state=tk.DISABLED)
@@ -106,7 +105,7 @@ class SudokuGUI:
         self.ax.set_xlabel("Algorithm")
         self.ax.set_ylabel("Time (ms)")
 
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph_frame)
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.right_frame)  
         self.canvas.get_tk_widget().grid()
 
     def compare_algorithms(self):
@@ -155,7 +154,7 @@ class SudokuGUI:
         print("Converted timings (ms):", list(timings_ms.values())[1:])
 
     def build_results_table(self):
-        self.results_table = ttk.Treeview(self.root, columns=("Puzzle", "Backtracking", "Constraint Propagation", "DLX"), show="headings")
+        self.results_table = ttk.Treeview(self.left_frame, columns=("Puzzle", "Backtracking", "Constraint Propagation", "DLX"), show="headings")
         self.results_table.heading("Puzzle", text="Puzzle")
         self.results_table.heading("Backtracking", text="Backtracking (ms)")
         self.results_table.heading("Constraint Propagation", text="Constraint Propagation (ms)")
