@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import ttk
 from utils.image_parser import image_to_grid
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -15,21 +16,27 @@ import mplcursors
 class SudokuGUI:
     def __init__(self, root, board, fsm):
         self.root = root
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+
+
         self.board = board
         self.fsm = fsm
         self.original_grid = None  
         self.entries = []
         self.all_results = [] 
         self.current_annotation = None
+        self.build_results_table()
 
         self.main_frame = tk.Frame(self.root)
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        self.main_frame.grid(row=0, column=0, sticky="nsew")
 
         self.left_frame = tk.Frame(self.main_frame)
-        self.left_frame.pack(side=tk.LEFT, padx=20, pady=20)
+        self.left_frame.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
         self.right_frame = tk.Frame(self.main_frame, width=600)
-        self.right_frame.pack(side=tk.RIGHT, padx=20, pady=20)
+        self.right_frame.grid(row=0, column=1, padx=20, pady=20, sticky="n")
 
         self.build_grid()
         self.build_buttons()
@@ -53,7 +60,7 @@ class SudokuGUI:
     def build_buttons(self):
         self.solve_button = None  
         button_frame = tk.Frame(self.root)
-        button_frame.pack(pady=10)
+        button_frame.grid(row=9, column=0, columnspan=9, pady=10, sticky="w")
 
         self.validate_button = tk.Button(button_frame, text="Validate", command=self.validate)
         self.validate_button.grid(row=0, column=0, padx=5)
@@ -76,19 +83,18 @@ class SudokuGUI:
         self.algo_menu.grid(row=0, column=4, padx=5)
         self.algo_menu.config(state=tk.DISABLED)
 
-        
     def build_status_bar(self):
         self.status_frame = tk.Frame(self.root)
-        self.status_frame.pack(pady=5)
+        self.status_frame.grid(row=10, column=0, columnspan=9, pady=(5, 10), sticky="w")
 
         self.status_label = tk.Label(self.status_frame, text="🟡 No puzzle loaded", fg="orange", font=("Arial", 10))
-        self.status_label.pack()
+        self.status_label.grid()
 
         self.algorithm_label = tk.Label(self.status_frame, text="Algorithm: None", font=("Arial", 10))
-        self.algorithm_label.pack()
+        self.algorithm_label.grid()
 
         self.timer_label = tk.Label(self.status_frame, text="", font=("Arial", 10))
-        self.timer_label.pack()
+        self.timer_label.grid()
 
     def build_graph_section(self):
         self.graph_frame = tk.Frame(self.right_frame)
@@ -101,7 +107,7 @@ class SudokuGUI:
         self.ax.set_ylabel("Time (ms)")
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph_frame)
-        self.canvas.get_tk_widget().pack()
+        self.canvas.get_tk_widget().grid()
 
     def compare_algorithms(self):
         from solver.backtracking import solve as backtrack_solve
@@ -129,9 +135,38 @@ class SudokuGUI:
 
         self.all_results.append(results)
         self.update_graph_multiple()
-        print("Raw timings (s):", results)
-        print("Converted timings (ms):", [round((results[k] or 0) * 1000, 3) for k in results])
+        
+        puzzle_name = f"Puzzle {len(self.all_results)}"
+        timings_ms = {
+            "Puzzle": puzzle_name,
+            "Backtracking": round((results["Backtracking"] or 0) * 1000, 3),
+            "Constraint Propagation": round((results["Constraint Propagation"] or 0) * 1000, 3),
+            "DLX": round((results["DLX"] or 0) * 1000, 3)
+        }
 
+        self.results_table.insert("", "end", values=(
+            timings_ms["Puzzle"],
+            timings_ms["Backtracking"],
+            timings_ms["Constraint Propagation"],
+            timings_ms["DLX"]
+        ))
+
+        print("Raw timings (s):", results)
+        print("Converted timings (ms):", list(timings_ms.values())[1:])
+
+    def build_results_table(self):
+        self.results_table = ttk.Treeview(self.root, columns=("Puzzle", "Backtracking", "Constraint Propagation", "DLX"), show="headings")
+        self.results_table.heading("Puzzle", text="Puzzle")
+        self.results_table.heading("Backtracking", text="Backtracking (ms)")
+        self.results_table.heading("Constraint Propagation", text="Constraint Propagation (ms)")
+        self.results_table.heading("DLX", text="DLX (ms)")
+    
+        self.results_table.column("Puzzle", width=100)
+        self.results_table.column("Backtracking", width=140)
+        self.results_table.column("Constraint Propagation", width=190)
+        self.results_table.column("DLX", width=100)
+
+        self.results_table.grid(row=12, column=0, columnspan=9, padx=10, pady=10)
 
     def update_graph_multiple(self):
         self.ax.clear()
