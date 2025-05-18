@@ -10,6 +10,7 @@ from solver.backtracking import solve as backtrack_solve
 from solver.constraint_propagation import solve as constraint_solve
 from solver.dlx import solve as dlx_solve
 import traceback
+import mplcursors
 
 class SudokuGUI:
     def __init__(self, root, board, fsm):
@@ -19,6 +20,7 @@ class SudokuGUI:
         self.original_grid = None  
         self.entries = []
         self.all_results = [] 
+        self.current_annotation = None
 
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
@@ -102,7 +104,6 @@ class SudokuGUI:
         self.canvas.get_tk_widget().pack()
 
     def compare_algorithms(self):
-        
         from solver.backtracking import solve as backtrack_solve
         from solver.constraint_propagation import solve as constraint_solve
         from solver.dlx import solve as dlx_solve
@@ -144,29 +145,70 @@ class SudokuGUI:
         color_cycle = plt.cm.get_cmap('tab10').colors
         
         algo_names = ["Backtracking", "Constraint Propagation", "DLX"]
+        x_values = list(range(len(algo_names)))
 
         for i, result in enumerate(recent_results):
             times = [round((result.get(name) or 0) * 1000, 3) for name in algo_names]
             puzzle_num = base_index + i + 1
-            self.ax.plot(
-                algo_names,
+            line = self.ax.plot(
+                x_values,
                 times,
-                marker='o',
                 linestyle='-',
                 color=color_cycle[i % len(color_cycle)],
                 label=f"Puzzle {puzzle_num}"
             )
-            
-        # Dynamic Y-axis scaling based on all plotted values
+
+            self.ax.scatter(
+                x_values,
+                times,
+                s=60,  
+                color=color_cycle[i % len(color_cycle)],
+                alpha=0.3,  
+                label=f"Puzzle {puzzle_num} - Timestamp"
+            )
+
         all_times = []
         for result in recent_results:
             all_times.extend([(result.get(name) or 0) * 1000 for name in algo_names])
 
         max_time = max(all_times) if all_times else 1
         self.ax.set_ylim(0, max_time * 1.2)
-
+        self.ax.set_xticks(x_values)
+        self.ax.set_xticklabels(algo_names)
         self.ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0))
+        self.figure.tight_layout(rect=[0, 0, 0.85, 1])
+        
+        if self.current_annotation:
+            self.current_annotation.set_visible(False)
+            self.canvas.draw_idle()
+
+        self.current_annotation = None 
+        
         self.canvas.draw()
+        
+        cursor = mplcursors.cursor(self.ax.collections, hover=True)
+
+        def show_tooltip(sel):
+            if sel.index is None:
+                sel.annotation.set_text("Invalid point")
+                return 
+            try:
+                if self.current_annotation and self.current_annotation != sel.annotation:
+                    self.current_annotation.set_visible(False)
+                    self.canvas.draw_idle()
+                    
+                algo_index = int(sel.artist.get_offsets()[sel.index][0])
+                algo_label = algo_names[algo_index]
+                y_val = sel.artist.get_offsets()[sel.index][1]
+                puzzle_label = sel.artist.get_label().replace(" - Timestamp", "")
+                sel.annotation.set_text(f"{puzzle_label} - {algo_label}: {y_val:.3f} ms")
+                
+                self.current_annotation = sel.annotation
+            except Exception as e:
+                sel.annotation.set_text("Invalid point")
+                print("Tooltip error:", e)
+
+        cursor.connect("add", show_tooltip)
         
     def update_graph(self, results):
         self.ax.clear()
@@ -178,10 +220,19 @@ class SudokuGUI:
         times = [round((results[name] or 0) * 1000, 3) for name in names]  
 
         self.ax.plot(names, times, marker='o')
+        self.figure.tight_layout(rect=[0, 0, 0.85, 1])  
         self.canvas.draw()
+        
+        mplcursors.cursor(self.ax.lines, hover=True).connect(
+            "add", lambda sel: sel.annotation.set_text(
+                f"{sel.artist.get_xdata()[sel.index]}: {sel.artist.get_ydata()[sel.index]:.3f} ms"
+            )
+        )
+
         
     def clear_graph(self):
         self.all_results.clear()
+        mplcursors.cursor(self.ax, hover=True).remove()
         self.ax.clear()
         self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
         self.ax.set_xlabel("Algorithm")
