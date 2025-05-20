@@ -390,7 +390,3 @@ class SudokuGUI:
 
             self.root.after(100, lambda: messagebox.showerror(
                 "Validation Error", "❌ The uploaded Sudoku puzzle is invalid."))
-
-
-
-
