@@ -1,3 +1,5 @@
+from utils.heuristics import get_column_with_least_nodes
+
 # Base node class for the DLX structure
 class DLXNode:
     def __init__(self, row=-1, col=-1):
@@ -85,6 +87,7 @@ class DancingLinks:
         col.R.L = col
         col.L.R = col
 
+
     # Recursive search for a valid exact cover solution
     def search(self):
         # Success if all columns are covered 
@@ -92,7 +95,10 @@ class DancingLinks:
             return True
 
         # Choosing the column with the fewest nodes for minimum branching
-        col = min(self.iter_right(self.root), key=lambda c: c.size)
+        col = get_column_with_least_nodes(self.root)
+        if not col:
+            return False
+        
         self.cover(col)
         
         for row in self.iter_down(col):

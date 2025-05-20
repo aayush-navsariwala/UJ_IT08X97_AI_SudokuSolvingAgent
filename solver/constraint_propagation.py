@@ -1,3 +1,5 @@
+from utils.heuristics import find_mrv_cell
+
 # Returns a list of valid numbers that can be placed at the given cell without violating the sudoku rules 
 def get_possible_values(board, row, col):
     # Skips if the cell is already filled 
@@ -28,22 +30,23 @@ def solve(board):
     # Keeps applying constraint propagation until no further progress is made
     while progress:
         progress = False
-        for row in range(9):
-            for col in range(9):
-                if board.grid[row][col] == 0:
-                    options = get_possible_values(board, row, col)
-                    if len(options) == 1:
-                        # Fill in the determined value
-                        board.grid[row][col] = options[0]
-                        # When a cell is filled, keep propagating
-                        progress = True
-                        
-    # After all deterministic cells are filled, check if the board is complete
+        # Using MRV to pick the cell
+        cell = find_mrv_cell(board.grid)
+        if cell:
+            row, col = cell
+            options = get_possible_values(board, row, col)
+            if len(options) == 1:
+                board.grid[row][col] = options[0]
+                progress = True
+        else:
+            # If no empty cells are left or no progress
+            break
+        
+    # After propagation, check if fully solved                        
     for row in range(9):
         for col in range(9):
             # If there are still places with 0, the board is not solved
             if board.grid[row][col] == 0:
                 return False
     
-    # The board was solved without guessing 
     return True
