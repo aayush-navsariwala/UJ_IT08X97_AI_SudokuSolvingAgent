@@ -1,7 +1,7 @@
 class SudokuBoard:
     def __init__(self, grid=None):
         # Initialise the sudoku board
-        # If not grid is given, create a 9x9 grid filled with empty cells
+        # If no grid is given, create a 9x9 grid filled with empty cells
         self.grid = grid if grid else [[0 for _ in range(9)] for _ in range(9)]
 
     # Check if placing a number at (row, col) is valid according to the game rules
