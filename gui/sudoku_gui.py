@@ -7,9 +7,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import time
-from solver.backtracking import solve as backtrack_solve
-from solver.constraint_propagation import solve as constraint_solve
-from solver.dlx import solve as dlx_solve
+# from solver.backtracking import solve as backtrack_solve
+# from solver.constraint_propagation import solve as constraint_solve
+# from solver.dlx import solve as dlx_solve
 import traceback
 import mplcursors
 
@@ -139,31 +139,71 @@ class SudokuGUI:
 
     def compare_algorithms(self):
         # Automatically runs all 3 algorithms on the uploaded puzzle as long as it is valid
-        from solver.backtracking import solve as backtrack_solve
-        from solver.constraint_propagation import solve as constraint_solve
+        import time
+        from solver.backtracking import solve as bt_solve
+        from solver.constraint_propagation import solve as cp_solve
         from solver.dlx import solve as dlx_solve
         from core.board import SudokuBoard
+        import copy
         
-        algorithms = {
-            "Backtracking": backtrack_solve,
-            "Constraint Propagation": constraint_solve,
+        # Debugging for constraint propagation import
+        print("🧠 Confirming cp_solve is a function:", callable(cp_solve))  
+        
+        safe_solvers = {
+            "Backtracking": bt_solve,
+            "Constraint Propagation": cp_solve,
             "DLX": dlx_solve
         }
         
         # Stores the execution time from each algorithm on the uploaded puzzle 
         results = {}
         
+        # Limiting DLX runtime for debugging purposes
+        MAX_DLX_TIME = 3.0
+        
         # Solve the puzzle with each algorithm and measure their times individually
-        for name, algo_func in algorithms.items():
-            copied_grid = [row.copy() for row in self.original_grid]
+        for name in safe_solvers:
+            # New reference for each loop
+            algo_func = safe_solvers[name]
+            # copied_grid = [row.copy() for row in self.original_grid]
+            copied_grid = copy.deepcopy(self.original_grid)
             board_copy = SudokuBoard(grid=copied_grid)
 
+            # Added terminal output for debugging
+            print(f"Solving {name}...")
+            
             start = time.time()
-            success = algo_func(board_copy)
+            success = False
+            
+            # Using a try block for error handling
+            try:
+                if name == "DLX":
+                    # Try solving and abort if too long
+                    temp_start = time.time()
+                    success = algo_func(board_copy)
+                    elapsed = time.time() - temp_start
+                    if elapsed > MAX_DLX_TIME:
+                        print("⚠️ DLX timeout exceeded")
+                        success = False
+                else:
+                    # Final recheck to avoid overwriting
+                    if not callable(algo_func):
+                        print(f"❌ {name} solver was overwritten! Got type: {type(algo_func)}")
+                        success = False
+                    else:
+                        success = algo_func(board_copy)          
+            except Exception as e:
+                print(f"Error in {name} solver: {e}")
+                success = False
+            
             end = time.time()
+            duration = end - start
+            results[name] = duration if success else None
+            
+            print(f"✅ Done {name} in {round(duration * 1000, 3)} ms")
 
-            results[name] = end - start if success else None
-
+            # results[name] = end - start if success else None
+        
         # Store the results for the graph and table
         self.all_results.append(results)
         self.update_graph_multiple()
@@ -233,7 +273,11 @@ class SudokuGUI:
 
         # Extracting the times in ms for the puzzle
         for i, result in enumerate(recent_results):
-            times = [round((result.get(name) or 0) * 1000, 3) for name in algo_names]
+            times = [
+                round(result.get(name, 0) * 1000, 3) if result.get(name) is not None else 0
+                for name in algo_names
+            ]
+
             puzzle_num = base_index + i + 1
             
             # Plot line connecting algorithms for the puzzle

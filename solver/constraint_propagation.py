@@ -1,4 +1,5 @@
 from utils.heuristics import find_mrv_cell
+from core.board import SudokuBoard
 
 # Returns a list of valid numbers that can be placed at the given cell without violating the sudoku rules 
 def get_possible_values(board, row, col):
@@ -24,7 +25,7 @@ def get_possible_values(board, row, col):
     return list(possible)
 
 # Solves the sudoku board using pure constraint propagation
-def solve(board):
+def constraint_propagation(board):
     progress = True
     
     # Keeps applying constraint propagation until no further progress is made
@@ -41,12 +42,40 @@ def solve(board):
         else:
             # If no empty cells are left or no progress
             break
+    return board
         
-    # After propagation, check if fully solved                        
-    for row in range(9):
-        for col in range(9):
-            # If there are still places with 0, the board is not solved
-            if board.grid[row][col] == 0:
-                return False
+def solve(board):
+    print("🧠 Running Constraint Propagation solve()")
+    # Apply constraint propagation
+    constraint_propagation(board)
     
-    return True
+    # After propagation, check if fully solved                        
+    for row in board.grid:
+        if 0 in row:
+            break
+    else:
+        return True
+    
+    # Pick the next cell using MRV
+    cell = find_mrv_cell(board.grid)
+    if not cell:
+        print("❌ No more solvable cells found — invalid board?")
+        return False
+    
+    row, col = cell
+    values = get_possible_values(board, row, col)
+    
+    if not values:
+        print(f"❌ No valid values for cell ({row}, {col}) — dead end")
+        return False
+    
+    for val in values:
+        board.grid[row][col] = val
+        board_copy = SudokuBoard([r.copy() for r in board.grid])
+        if solve(board_copy):
+            board.grid = [r.copy() for r in board_copy.grid]
+            return True
+        board.grid[row][col] = 0
+        
+    print(f"❌ Backtracking failed at ({row}, {col}) — no options worked")
+    return False

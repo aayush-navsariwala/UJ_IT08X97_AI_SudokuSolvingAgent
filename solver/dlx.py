@@ -1,4 +1,5 @@
 from utils.heuristics import get_column_with_least_nodes
+import time
 
 # Base node class for the DLX structure
 class DLXNode:
@@ -63,9 +64,18 @@ class DancingLinks:
                         node.R = prev.R
                         prev.R.L = node
                         prev.R = node
+
                     else:
                         node.L = node.R = node
                     prev = node
+                    
+    def count_remaining_columns(self):
+        count = 0 
+        node = self.root.R
+        while node != self.root:
+            count += 1
+            node = node.R
+        return count
 
     # Remove a column and its related rows from the matrix
     def cover(self, col):
@@ -87,16 +97,23 @@ class DancingLinks:
         col.R.L = col
         col.L.R = col
 
-
     # Recursive search for a valid exact cover solution
     def search(self):
+        # Setting a timeout after 3 seconds
+        if time.time() - self.start_time > 3:
+            print("🛑 DLX timeout exceeded at depth", len(self.solution))
+            return False
+        
         # Success if all columns are covered 
         if self.root.R == self.root:
             return True
 
-        # Choosing the column with the fewest nodes for minimum branching
-        col = get_column_with_least_nodes(self.root)
-        if not col:
+        # Safely select column with the fewest nodes
+        try:
+            # Choosing the column with the fewest nodes for minimum branching
+            col = min(self.iter_right(self.root), key=lambda c: c.size)
+        except ValueError:
+            # No valid column found
             return False
         
         self.cover(col)
@@ -163,10 +180,15 @@ def sudoku_to_exact_cover(grid):
 
     for r in range(9):
         for c in range(9):
-            if grid[r][c] == 0:
+            val = grid[r][c]
+            if val == 0:
                 digits = range(1, 10)
             else:
-                digits = [grid[r][c]]
+                # Validate value is between 1–9
+                if not (1 <= val <= 9):
+                    continue
+                digits = [val]
+
             for d in digits:
                 # Each row has 324 constraints
                 row = [0] * 324
@@ -181,8 +203,14 @@ def sudoku_to_exact_cover(grid):
 def solve(board):
     # Generate exact cover matrix
     matrix, row_map = sudoku_to_exact_cover(board.grid)
+    print(f"🧩 Matrix rows: {len(matrix)} x {len(matrix[0])}")
+    
     # Initialise the DLX solver
     dlx = DancingLinks(matrix)
+    # Storing to access in search
+    dlx.row_map = row_map
+    # Setting timeout preference
+    dlx.start_time = time. time()
     
     # Attempt to find a solution
     if dlx.search():

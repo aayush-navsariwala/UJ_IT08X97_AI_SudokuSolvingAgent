@@ -39,7 +39,7 @@ def get_column_density(matrix):
 
 
 def get_column_with_least_nodes(root):
-    # Returns the column with the fewest nodes used in DLX 
+    # Returns the column with the fewest nodes from header list used in DLX 
     best = None
     min_size = float('inf')
     node = root.R
