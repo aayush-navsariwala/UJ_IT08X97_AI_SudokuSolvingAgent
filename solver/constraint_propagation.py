@@ -65,17 +65,25 @@ def solve(board):
     row, col = cell
     values = get_possible_values(board, row, col)
     
+    # If no valid values can be placed in the cell, return false
     if not values:
         print(f"❌ No valid values for cell ({row}, {col}) — dead end")
         return False
     
+    # Try each possible value recursively using backtracking
     for val in values:
         board.grid[row][col] = val
+        
+        # Work on a deep copy to preserve the board state if backtracking fails
         board_copy = SudokuBoard([r.copy() for r in board.grid])
         if solve(board_copy):
+            # If the recursion succeeds, update the original board
             board.grid = [r.copy() for r in board_copy.grid]
             return True
+        
+        # Backtracks the board on failure
         board.grid[row][col] = 0
         
     print(f"❌ Backtracking failed at ({row}, {col}) — no options worked")
     return False
+

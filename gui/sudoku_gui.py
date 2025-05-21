@@ -201,8 +201,6 @@ class SudokuGUI:
             results[name] = duration if success else None
             
             print(f"✅ Done {name} in {round(duration * 1000, 3)} ms")
-
-            # results[name] = end - start if success else None
         
         # Store the results for the graph and table
         self.all_results.append(results)
@@ -382,6 +380,12 @@ class SudokuGUI:
     def clear_graph(self):
         # Clears the algorithm comparison graph and resets all stored results
         self.all_results.clear()
+        
+        # Clear existing table entries
+        for row in self.results_table.get_children():
+            self.results_table.delete(row)
+            
+        # Clear the graph and reset the axis
         mplcursors.cursor(self.ax, hover=True).remove()
         self.ax.clear()
         self.ax.set_title("Algorithm Comparison Over Multiple Puzzles")
